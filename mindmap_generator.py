@@ -91,7 +91,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--title",
-        default="æç»´å¯¼å¾",
+        default="思维导图",
         help="Document title shown in the SVG metadata.",
     )
     return parser.parse_args()
@@ -144,24 +144,24 @@ def load_json(path: Path) -> dict[str, Any]:
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError as exc:
-        raise SystemExit(f"æªæ¾å°è¾å¥æä»¶: {path}") from exc
+        raise SystemExit(f"未找到输入文件: {path}") from exc
     except json.JSONDecodeError as exc:
-        raise SystemExit(f"JSON æ ¼å¼éè¯¯: {exc}") from exc
+        raise SystemExit(f"JSON 格式错误: {exc}") from exc
 
 
 def build_tree(data: dict[str, Any], level: int = 1) -> Node:
     if level > MAX_LEVELS:
-        raise SystemExit(f"å±çº§è¶è¿éå¶ï¼æå¤æ¯æ {MAX_LEVELS} çº§ã")
+        raise SystemExit(f"层级超过限制：最多支持 {MAX_LEVELS} 级。")
 
     title = str(data.get("title", "")).strip()
     if not title:
-        raise SystemExit("æ¯ä¸ªèç¹é½å¿é¡»åå«éç©ºç title å­æ®µã")
+        raise SystemExit("每个节点都必须包含非空的 title 字段。")
 
     raw_children = data.get("children", [])
     if raw_children is None:
         raw_children = []
     if not isinstance(raw_children, list):
-        raise SystemExit(f"èç¹ '{title}' ç children å¿é¡»æ¯æ°ç»ã")
+        raise SystemExit(f"节点 '{title}' 的 children 必须是数组。")
 
     node = Node(title=title, level=level)
     node.children = [build_tree(child, level + 1) for child in raw_children]
@@ -356,7 +356,7 @@ def cubic_bezier_points(
     p3: tuple[float, float],
     steps: int = 24,
 ) -> list[tuple[float, float]]:
-    points: list[tuple[float, float] = []
+    points: list[tuple[float, float]] = []
     for i in range(steps + 1):
         t = i / steps
         mt = 1 - t
@@ -394,7 +394,7 @@ def brace_points(x: float, y1: float, y2: float, w: float = BRACE_WIDTH) -> list
         ((x, y2 - a), (x + w, y2 - a), (x + w, y2), (x, y2)),
     ]
 
-    points: list[tuple[float, float] = []
+    points: list[tuple[float, float]] = []
     for index, seg in enumerate(segments):
         seg_points = cubic_bezier_points(*seg)
         if index > 0:
@@ -424,10 +424,10 @@ def load_font(size: int):
         from PIL import ImageFont
     except Exception as exc:
         raise SystemExit(
-            "å½åè¿è¡ç¯å¢ç¼ºå° Pillowï¼æ æ³è¾åº PNGã\n"
-            "è§£å³åæ³ï¼\n"
-            "1) å®è£ä¾èµï¼pip install pillow\n"
-            "2) ææ¹ç¨è¾åº SVGï¼--format svg --output xxx.svg"
+            "当前运行环境缺少 Pillow，无法输出 PNG。\n"
+            "解决办法：\n"
+            "1) 安装依赖：pip install pillow\n"
+            "2) 或改用输出 SVG：--format svg --output xxx.svg"
         ) from exc
 
     font_path = find_font_path()
@@ -444,10 +444,10 @@ def export_png(root: Node, output_path: Path) -> None:
         from PIL import Image, ImageDraw
     except Exception as exc:
         raise SystemExit(
-            "å½åè¿è¡ç¯å¢ç¼ºå° Pillowï¼æ æ³è¾åº PNGã\n"
-            "è§£å³åæ³ï¼\n"
-            "1) å®è£ä¾èµï¼pip install pillow\n"
-            "2) ææ¹ç¨è¾åº SVGï¼--format svg --output xxx.svg"
+            "当前运行环境缺少 Pillow，无法输出 PNG。\n"
+            "解决办法：\n"
+            "1) 安装依赖：pip install pillow\n"
+            "2) 或改用输出 SVG：--format svg --output xxx.svg"
         ) from exc
 
     width, height = get_canvas_size(root)
@@ -527,15 +527,15 @@ def main() -> None:
         else:
             export_png(root, output_path)
 
-        print(f"æç»´å¯¼å¾å·²çæ: {output_path}")
+        print(f"思维导图已生成: {output_path}")
 
         if auto_mode:
             open_output_file(output_path)
-            show_message("çææå", f"æç»´å¯¼å¾å·²çæï¼\n{output_path}")
+            show_message("生成成功", f"思维导图已生成：\n{output_path}")
     except SystemExit as exc:
         message = str(exc)
         if auto_mode:
-            show_message("çæå¤±è´¥", message, is_error=True)
+            show_message("生成失败", message, is_error=True)
             return
         raise
 
