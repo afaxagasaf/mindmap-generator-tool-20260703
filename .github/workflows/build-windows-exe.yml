@@ -1,46 +1,29 @@
 name: Build Windows EXE
-
 on:
   workflow_dispatch:
-
+  push:
+    paths:
+      - ".github/workflows/build-windows-exe.yml"
+      - "mindmap_generator.py"
+      - "example_mindmap.json"
 jobs:
   build:
     runs-on: windows-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pyinstaller pillow
-
-      - name: Build exe
-        run: |
-          pyinstaller --onefile --noconsole --name mindmap_generator mindmap_generator.py
-
-      - name: Prepare package
-        shell: powershell
+      - run: python -m pip install --upgrade pip
+      - run: pip install pyinstaller pillow
+      - run: pyinstaller --onefile --noconsole --name mindmap_generator mindmap_generator.py
+      - shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path package | Out-Null
           Copy-Item dist\mindmap_generator.exe package\
           Copy-Item example_mindmap.json package\
-          @"
-          ä½¿ç¨è¯´æï¼
-          1. ç¨è®°äºæ¬æå¼ example_mindmap.json
-          2. ä¿®æ¹åå®¹åä¿å­
-          3. åå» mindmap_generator.exe
-          4. ç¨åºä¼å¨åç®å½çæ example_mindmap.png å¹¶èªå¨æå¼
-          "@ | Out-File -Encoding utf8 package\ä½¿ç¨è¯´æ.txt
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+          "Edit example_mindmap.json, then double-click mindmap_generator.exe." | Out-File -Encoding utf8 package\README.txt
+      - uses: actions/upload-artifact@v4
         with:
           name: mindmap_generator_windows
           path: package
